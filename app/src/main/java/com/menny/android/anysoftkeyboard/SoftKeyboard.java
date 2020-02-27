@@ -17,8 +17,10 @@
 package com.menny.android.anysoftkeyboard;
 
 import android.content.ComponentName;
+import android.util.Log;
 
 import com.anysoftkeyboard.AnySoftKeyboard;
+import com.menny.android.anysoftkeyboard.BiAffect.BiAManager;
 
 /*
  * Why is this class exists?
@@ -26,7 +28,6 @@ import com.anysoftkeyboard.AnySoftKeyboard;
  * and still support upgrade... so SoftKeyboard inherits from the actual class
  */
 public class SoftKeyboard extends AnySoftKeyboard {
-
     @Override
     protected String getSettingsInputMethodId() {
         return new ComponentName(getApplication(), SoftKeyboard.class).flattenToShortString();

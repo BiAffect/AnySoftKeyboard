@@ -19,6 +19,7 @@ package com.anysoftkeyboard;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.IBinder;
@@ -60,12 +61,14 @@ import com.anysoftkeyboard.ui.settings.MainSettingsActivity;
 import com.anysoftkeyboard.utils.IMEUtil;
 import com.google.android.voiceime.VoiceRecognitionTrigger;
 import com.menny.android.anysoftkeyboard.AnyApplication;
+import com.menny.android.anysoftkeyboard.BiAffect.BiAManager;
 import com.menny.android.anysoftkeyboard.BuildConfig;
 import com.menny.android.anysoftkeyboard.R;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import android.util.*;
 
 /**
  * Input method implementation for QWERTY-ish keyboard.
@@ -90,6 +93,8 @@ public abstract class AnySoftKeyboard extends AnySoftKeyboardIncognito {
 
     private int mOrientation = Configuration.ORIENTATION_PORTRAIT;
 
+    SharedPreferences spref;
+
     public AnySoftKeyboard() {
         super();
     }
@@ -113,6 +118,7 @@ public abstract class AnySoftKeyboard extends AnySoftKeyboardIncognito {
     @Override
     public void onCreate() {
         super.onCreate();
+        spref = getSharedPreferences("login",MODE_PRIVATE);
         mOrientation = getResources().getConfiguration().orientation;
         if (!BuildConfig.DEBUG && DeveloperUtils.hasTracingRequested(getApplicationContext())) {
             try {
@@ -187,7 +193,9 @@ public abstract class AnySoftKeyboard extends AnySoftKeyboardIncognito {
     @Override
     public void onDestroy() {
         Logger.i(TAG, "AnySoftKeyboard has been destroyed! Cleaning resources..");
+
         unregisterReceiver(mPackagesChangedReceiver);
+
 
         final IBinder imeToken = getImeToken();
         if (imeToken != null) mInputMethodManager.hideStatusIcon(imeToken);
@@ -201,6 +209,11 @@ public abstract class AnySoftKeyboard extends AnySoftKeyboardIncognito {
                     getString(R.string.debug_tracing_finished,
                             DeveloperUtils.getTraceFile()), Toast.LENGTH_SHORT)
                     .show();
+        }
+        if(!BiAManager.getInstance(AnyApplication.getAppContext()).endSession()){
+            Log.i("BiAffect", "End Session Failed in hideWindow");
+        }else{
+            Log.i("BiAffect", "End Session Successfull in hideWindow");
         }
 
         super.onDestroy();
@@ -217,8 +230,13 @@ public abstract class AnySoftKeyboard extends AnySoftKeyboardIncognito {
         Logger.v(TAG, "onStartInputView(EditorInfo{imeOptions %d, inputType %d}, restarting %s",
                 attribute.imeOptions, attribute.inputType, restarting);
 
-        super.onStartInputView(attribute, restarting);
+        if(!BiAManager.getInstance(AnyApplication.getAppContext()).startSession()){
+            Log.i("BiAffect", "Start Session Failed");
+        }else{
+            Log.i("BiAffect", "Start Session Successfull");
+        }
 
+        super.onStartInputView(attribute, restarting);
         if (mVoiceRecognitionTrigger != null) {
             mVoiceRecognitionTrigger.onStartInputView();
         }
@@ -231,6 +249,7 @@ public abstract class AnySoftKeyboard extends AnySoftKeyboardIncognito {
         getInputView().setKeyboardActionType(attribute.imeOptions);
 
         updateShiftStateNow();
+
     }
 
     @Override
@@ -605,6 +624,8 @@ public abstract class AnySoftKeyboard extends AnySoftKeyboardIncognito {
     @Override
     public void onKey(int primaryCode, Key key, int multiTapIndex, int[] nearByKeyCodes, boolean fromUI) {
         super.onKey(primaryCode, key, multiTapIndex, nearByKeyCodes, fromUI);
+        Long tsLong = System.currentTimeMillis();
+        Log.d("CS_KD_OK", " "+ primaryCode+" "+tsLong);
 
         if (primaryCode > 0) {
             onNonFunctionKey(primaryCode, key, multiTapIndex, nearByKeyCodes, fromUI);
@@ -962,6 +983,8 @@ public abstract class AnySoftKeyboard extends AnySoftKeyboardIncognito {
         super.onWindowHidden();
 
         abortCorrectionAndResetPredictionState(true);
+        // solve the problem of saving data when user close the keyboard
+        BiAManager.getInstance(AnyApplication.getAppContext()).endSession();
     }
 
     private void nextAlterKeyboard(EditorInfo currentEditorInfo) {
@@ -997,7 +1020,11 @@ public abstract class AnySoftKeyboard extends AnySoftKeyboardIncognito {
     public void onPress(int primaryCode) {
         super.onPress(primaryCode);
         InputConnection ic = getCurrentInputConnection();
-
+        Log.d("KD", Log.getStackTraceString(new Exception()));
+        Long tsLong = System.currentTimeMillis();
+        Log.d("CS TS -> ", tsLong.toString());
+        Log.d("CS From AnySoftKeyboard", Log.getStackTraceString(new Exception()));
+        Log.d("CS_KD_OP", " "+ primaryCode+" "+tsLong);
         if (primaryCode == KeyCodes.SHIFT) {
             mShiftKeyState.onPress();
             // Toggle case on selected characters
@@ -1020,6 +1047,8 @@ public abstract class AnySoftKeyboard extends AnySoftKeyboardIncognito {
     public void onRelease(int primaryCode) {
         super.onRelease(primaryCode);
         InputConnection ic = getCurrentInputConnection();
+        Long tsLong = System.currentTimeMillis();
+        Log.d("CS_KD_OR", " "+ primaryCode + " "+tsLong);
         if (primaryCode == KeyCodes.SHIFT) {
             mShiftKeyState.onRelease(mMultiTapTimeout, mLongPressTimeout);
             handleShift();
@@ -1120,6 +1149,12 @@ public abstract class AnySoftKeyboard extends AnySoftKeyboardIncognito {
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
+        Log.i("Conf", "onConfigurationChanged be called");
+        if(!BiAManager.getInstance(AnyApplication.getAppContext()).endSession()){
+            Log.i("BiAffect", "End Session Failed");
+        }else{
+            Log.i("BiAffect", "End Session Successfull/ CONFIGUARTION");
+        }
         super.onConfigurationChanged(newConfig);
         if (newConfig.orientation != mOrientation) {
             mOrientation = newConfig.orientation;

@@ -19,6 +19,8 @@ package com.menny.android.anysoftkeyboard;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.Gravity;
+import android.widget.Toast;
 
 import com.anysoftkeyboard.ui.settings.BasicAnyActivity;
 import com.anysoftkeyboard.ui.settings.MainSettingsActivity;
@@ -41,6 +43,11 @@ public class LauncherSettingsActivity extends Activity {
         super.onCreate(savedInstanceState);
         if (savedInstanceState != null)
             mLaunched = savedInstanceState.getBoolean(LAUNCHED_KEY, false);
+        Bundle extras = getIntent().getExtras();
+        String message = extras.getString("successMsg");
+        Toast toast = Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT);
+        toast.setGravity(Gravity.CENTER, 0, 0);
+        toast.show();
     }
 
     @Override

@@ -22,7 +22,9 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
+import android.view.Gravity;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.anysoftkeyboard.quicktextkeys.ui.QuickTextKeysBrowseFragment;
 import com.menny.android.anysoftkeyboard.R;
@@ -46,6 +48,14 @@ public class MainSettingsActivity extends BasicAnyActivity {
         super.onCreate(icicle);
 
         mTitle = getTitle();
+
+        Bundle extras = getIntent().getExtras();
+        if( null != extras ) {
+            String message = extras.getString( "LoggedInMsg" );
+            Toast  toast   = Toast.makeText( getApplicationContext(), message, Toast.LENGTH_SHORT );
+            toast.setGravity( Gravity.CENTER, 0, 0 );
+            toast.show();
+        }
 
         mBottomNavigationView = (BottomNavigationView) findViewById(R.id.bottom_navigation);
 

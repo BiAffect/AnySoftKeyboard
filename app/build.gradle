@@ -9,18 +9,20 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.github.menny:GradleVersion:0.0.3'
+        classpath 'net.evendanan.autoversion:gradle-plugin:0.1.7'
+//        classpath 'com.github.menny:GradleVersion:0.0.3'
+        //classpath 'com.android.tools.build:gradle:3.3.0'
     }
 }
 
 apply plugin: 'com.android.application'
 apply plugin: 'com.github.triplet.play'
-apply plugin: 'net.evendanan.versiongenerator'
+apply plugin: 'net.evendanan.autoversion'
 
 def generators = [
         new net.evendanan.versiongenerator.generators.EnvBuildVersionGenerator.CircleCi(
                 1650/*adding to version. Should not ever change*/,
-                -2575-2600 /*decrementing due to minor, every minor/major bump, this should be decremented*/),
+                -2575 - 2600 /*decrementing due to minor, every minor/major bump, this should be decremented*/),
         new net.evendanan.versiongenerator.generators.StaticVersionGenerator()
 ]
 
@@ -31,6 +33,8 @@ apply from: "${rootDir}/gradle/android_general.gradle"
 android {
     defaultConfig {
         applicationId 'com.menny.android.anysoftkeyboard'
+        minSdkVersion 19
+        multiDexEnabled true
         versionCode versionData.versionCode
         versionName versionData.versionName
 
@@ -86,6 +90,11 @@ android {
             matchingFallbacks = ['release', 'debug']
         }
     }
+    sourceSets {
+        main {
+            java.srcDirs = ['src/main/java', 'src/main/java/com/menny/android/anysoftkeyboard/DAO_DB']
+        }
+    }
 }
 
 play {
@@ -104,7 +113,7 @@ if (playStoreWhatsNewFile.text.length() > 500) {
     println("Locale " + Locale.getDefault())
     println("file encoding " + CharsetToolkit.defaultSystemCharset)
     println("File contents:")
-    println("***" +  playStoreWhatsNewFile.text + "***")
+    println("***" + playStoreWhatsNewFile.text + "***")
     throw new IllegalStateException("whatsnew file can not be longer than 500 characters! Currently " + playStoreWhatsNewFile.text.length())
 }
 
@@ -118,6 +127,21 @@ dependencies {
     implementation project(':prefs')
     implementation project(':overlay')
     implementation project(':pixel')
+
+    implementation('org.sagebionetworks.bridge:android-sdk:0.2.0') {
+        exclude group: 'com.google.code.findbugs'
+    }
+
+    //https://developer.android.com/jetpack/androidx/releases/work#declaring_dependencies
+    def work_version = "1.0.1"
+    implementation("android.arch.work:work-runtime:$work_version") {
+        exclude group: 'com.google.guava', module: 'listenablefuture'
+    }
+    implementation("android.arch.work:work-rxjava2:$work_version") {
+        exclude group: 'com.google.guava', module: 'listenablefuture'
+    }
+
+    implementation 'com.github.akarnokd:rxjava2-interop:0.13.2'
 
     implementation "com.anysoftkeyboard.api:api:$AnySoftKeyboardApiVersion"
     implementation "com.android.support:support-fragment:$supportLibVersion"
@@ -138,6 +162,45 @@ dependencies {
     implementation 'com.anysoftkeybaord.languages:base:4.0.368@aar'
     implementation 'com.anysoftkeybaord.languages.english:english:4.0.368@aar'
 
+    implementation 'com.android.support:support-annotations:28.0.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+    implementation 'android.arch.lifecycle:extensions:1.1.1'
     testImplementation project(path: ':base-test')
     testImplementation 'com.github.triplet.simpleprovider:simpleprovider:1.1.0'
+
+//    // Room components
+    /*
+    * Room depends on 26.1 of support library, SupportLibrary does not promise interop between versions.
+    * hence code breaking?
+    * Trying to resolve by excluding from group
+    *  */
+    implementation("android.arch.persistence.room:runtime:$rootProject.roomVersion") {
+        exclude group: 'com.android.support'
+    }
+    annotationProcessor "android.arch.persistence.room:compiler:$rootProject.roomVersion"
+//     }
+}
+
+// trying to resolve the android version issues
+//configurations.all {
+//    resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+//        def requested = details.requested
+//        if (requested.group == 'com.android.support') {
+//            if (!requested.name.startsWith("multidex")) {
+//                details.useVersion '28.0.0'
+//            }
+//        }
+//    }
+//
+//
+
+configurations.all {
+    resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+        def requested = details.requested
+        if (requested.group == 'com.android.support') {
+            if (!requested.name.startsWith("multidex")) {
+                details.useVersion '25.4.0'
+            }
+        }
+    }
 }

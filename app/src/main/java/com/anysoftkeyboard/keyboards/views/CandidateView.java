@@ -18,6 +18,7 @@ package com.anysoftkeyboard.keyboards.views;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -28,11 +29,13 @@ import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.MotionEventCompat;
 import android.text.Layout.Alignment;
 import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
@@ -40,20 +43,26 @@ import android.view.View;
 import com.anysoftkeyboard.addons.AddOn;
 import com.anysoftkeyboard.base.utils.Logger;
 import com.anysoftkeyboard.ime.AnySoftKeyboardSuggestions;
+import com.anysoftkeyboard.keyboards.Keyboard;
 import com.anysoftkeyboard.overlay.OverlayData;
 import com.anysoftkeyboard.overlay.ThemeOverlayCombiner;
 import com.anysoftkeyboard.overlay.ThemeResourcesHolder;
 import com.anysoftkeyboard.rx.GenericOnError;
 import com.anysoftkeyboard.theme.KeyboardTheme;
 import com.menny.android.anysoftkeyboard.AnyApplication;
+import com.menny.android.anysoftkeyboard.BiAffect.BiAManager;
 import com.menny.android.anysoftkeyboard.R;
+
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import io.reactivex.disposables.Disposable;
 import io.reactivex.disposables.Disposables;
+
+import static com.anysoftkeyboard.keyboards.views.AnyKeyboardViewBase.NOT_A_KEY;
 
 public class CandidateView extends View implements ThemeableChild {
 
@@ -66,6 +75,7 @@ public class CandidateView extends View implements ThemeableChild {
     private final int[] mWordX = new int[MAX_SUGGESTIONS];
     private static final int SCROLL_PIXELS = 20;
     private final ArrayList<CharSequence> mSuggestions = new ArrayList<>();
+    private final int[] totallength = new int[MAX_SUGGESTIONS];
     private final Drawable mSelectionHighlight;
     private float mHorizontalGap;
     private final ThemeOverlayCombiner mThemeOverlayCombiner = new ThemeOverlayCombiner();
@@ -257,6 +267,7 @@ public class CandidateView extends View implements ThemeableChild {
 
         final ThemeResourcesHolder themeResources = mThemeOverlayCombiner.getThemeResources();
         int x = 0;
+
         for (int i = 0; i < count; i++) {
             CharSequence suggestion = mSuggestions.get(i);
             if (suggestion == null) {
@@ -286,6 +297,12 @@ public class CandidateView extends View implements ThemeableChild {
                 wordWidth = (int) (textWidth + mHorizontalGap * 2);
                 mWordWidth[i] = wordWidth;
             }
+
+            if(i == 0) totallength[i] = wordWidth;
+            else totallength[i] = totallength[i-1] + wordWidth;
+
+           // Log.d("Totallength", ""+totallength[i]);
+
 
             mWordX[i] = x;
 
@@ -442,6 +459,7 @@ public class CandidateView extends View implements ThemeableChild {
         final int y = (int) me.getY();
         mTouchX = x;
 
+
         switch (action) {
             case MotionEvent.ACTION_MOVE:
                 // Fling up!?
@@ -461,7 +479,32 @@ public class CandidateView extends View implements ThemeableChild {
                             mService.addWordToDictionary(word.toString());
                         }
                     } else if (!mNoticing) {
+                        // we only save data when user select word from autosuggestion
+                        //since the word is saved only when Action_up is fired.
+                        //We only put our probe here, not both Action_up and Action_down.
+
+                        // save autosuggestion touchtype data
+                        final int index = MotionEventCompat.getActionIndex(me);
+                        // for autosuggestion ,currently saving actiondown time as eventDownTime
+                        long eventDownTime;
+                        int pointerId;
+                        HashMap<Integer, Long> idToDownTimeMap = new HashMap<>();
+                        pointerId = me.getPointerId(index);
+                        // Using getDownTime() to get time of EVENT_DOWN as eventDownTime for research
+                        idToDownTimeMap.put(pointerId,me.getDownTime());
+                        eventDownTime = idToDownTimeMap.get(pointerId);
+                        BiAManager.getInstance(AnyApplication.getAppContext()).addMasterEntry(eventDownTime, me.getEventTime(), action, me.getPressure(index),
+                                me.getX(index), me.getY(index), me.getTouchMajor(index), me.getTouchMinor(index), me.getPointerCount());
+
+                        // save autosuggestion keytype data
+                       float  keyCentre_X = totallength[mSelectedIndex- 1] + mWordWidth[mSelectedIndex]/2;
+                       float keyCentre_Y = getTop() + getHeight()/2;
+                       float keyWidth = mWordWidth[mSelectedIndex];
+                       float keyHeight = getHeight();
+
+                        BiAManager.getInstance(AnyApplication.getAppContext()).addKeyDataOnlyAuto(eventDownTime, keyCentre_X, keyCentre_Y, keyWidth, keyHeight);
                         mService.pickSuggestionManually(mSelectedIndex, mSelectedString);
+
                     } else if (mSelectedIndex == 1 && !TextUtils.isEmpty(mJustAddedWord)) {
                         // 1 is the index of "Remove?"
                         Logger.d(TAG, "User wants to remove an added word '%s'", mJustAddedWord);
@@ -476,6 +519,7 @@ public class CandidateView extends View implements ThemeableChild {
         }
         return true;
     }
+
 
     public void notifyAboutWordAdded(CharSequence word) {
         mJustAddedWord = word;
@@ -561,4 +605,5 @@ public class CandidateView extends View implements ThemeableChild {
             return true;
         }
     }
+
 }

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="osb_base_url" translatable="false">https://webservices.sagebridge.org/</string>
+    <string name="osb_study_id" translatable="false">biaffect</string>
+    <string name="osb_study_name" translatable="false">AndroidTest</string>
+</resources>

@@ -32,7 +32,7 @@ import io.reactivex.disposables.Disposables;
 
 public abstract class AnySoftKeyboardWithGestureTyping extends AnySoftKeyboardWithQuickText {
 
-    private boolean mGestureTypingEnabled;
+    private final boolean mGestureTypingEnabled = false;
     protected final Map<String, GestureTypingDetector> mGestureTypingDetectors = new HashMap<>();
     @Nullable
     private GestureTypingDetector mCurrentGestureDetector;
@@ -56,7 +56,7 @@ public abstract class AnySoftKeyboardWithGestureTyping extends AnySoftKeyboardWi
                     if (powerState) return false;
                     return gestureTyping;
                 }).subscribe(enabled -> {
-            mGestureTypingEnabled = enabled;
+//            mGestureTypingEnabled = enabled;
             mDetectorStateSubscription.dispose();
             if (!mGestureTypingEnabled) {
                 destroyAllDetectors();
@@ -298,6 +298,7 @@ public abstract class AnySoftKeyboardWithGestureTyping extends AnySoftKeyboardWi
     private void confirmLastGesture(boolean withAutoSpace) {
         if (TextEntryState.getState() == TextEntryState.State.PERFORMED_GESTURE) {
             pickSuggestionManually(0, mWord.getTypedWord(), withAutoSpace);
+
         }
     }
 

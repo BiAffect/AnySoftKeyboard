@@ -25,6 +25,7 @@ import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -43,6 +44,7 @@ import com.anysoftkeyboard.keyboards.views.OnKeyboardActionListener;
 import com.anysoftkeyboard.ui.dev.DeveloperUtils;
 import com.anysoftkeyboard.utils.ModifierKeyState;
 import com.menny.android.anysoftkeyboard.AnyApplication;
+import com.menny.android.anysoftkeyboard.BiAffect.BiAManager;
 import com.menny.android.anysoftkeyboard.BuildConfig;
 import com.menny.android.anysoftkeyboard.R;
 
@@ -325,6 +327,11 @@ public abstract class AnySoftKeyboardBase extends InputMethodService implements 
         mInputSessionDisposables.dispose();
         if (getInputView() != null) getInputView().onViewNotRequired();
         mInputView = null;
+        if(!BiAManager.getInstance(AnyApplication.getAppContext()).endSession()){
+            Log.i("BiAffect", "End Session Failed in destroy");
+        }else{
+            Log.i("BiAffect", "End Session Successfull in destroy");
+        }
 
         super.onDestroy();
     }

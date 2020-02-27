@@ -12,3 +12,5 @@ local.properties
 .settings/
 .classpath
 .vscode/
+NDK_14b/
+.cxx/

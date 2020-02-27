@@ -18,12 +18,15 @@ package com.anysoftkeyboard.keyboards.views;
 
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.MotionEvent;
 
 import com.anysoftkeyboard.api.KeyCodes;
 import com.anysoftkeyboard.keyboards.AnyKeyboard.AnyKey;
 import com.anysoftkeyboard.keyboards.Keyboard.Key;
 import com.anysoftkeyboard.keyboards.views.AnyKeyboardViewBase.KeyPressTimingHandler;
+import com.menny.android.anysoftkeyboard.AnyApplication;
+import com.menny.android.anysoftkeyboard.BiAffect.BiAManager;
 
 import java.util.Locale;
 
@@ -242,9 +245,17 @@ class PointerTracker {
         mKeyAlreadyProcessed = false;
         mIsRepeatableKey = false;
         mKeyCodesInPathLength = -1;
+
+        //BiAffect Code Key Probe Start
+        Key temp = getKey(keyIndex);
+        BiAManager.getInstance(AnyApplication.getAppContext()).addKeyDataOnlyDownTime(eventTime, temp.getPrimaryCode(), temp.centerX, temp.centerY, temp.width, temp.height);
+        //BiAffect Code Key Probe End
+
         checkMultiTap(eventTime, keyIndex);
         if (mListener != null && isValidKeyIndex(keyIndex)) {
             AnyKey key = (AnyKey) mKeys[keyIndex];
+            //Key centre probe biaffect.
+            //print key details
             final int codeAtIndex = key.getCodeAtIndex(0, mKeyDetector.isKeyShifted(key));
 
             if (!mProxy.isAtTwoFingersState() && mListener.onGestureTypingInputStart(x, y, key, eventTime)) {
@@ -252,6 +263,8 @@ class PointerTracker {
             }
 
             if (codeAtIndex != 0) {
+                Long tsLong = System.currentTimeMillis()/1000;
+                Log.d("CS TS -> ", tsLong.toString());
                 mListener.onPress(codeAtIndex);
                 //also notifying about first down
                 mListener.onFirstDownKey(codeAtIndex);

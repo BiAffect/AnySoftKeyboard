@@ -16,6 +16,8 @@
 
 package com.anysoftkeyboard.keyboards.views;
 
+import android.util.Log;
+
 import com.anysoftkeyboard.api.KeyCodes;
 import com.anysoftkeyboard.keyboards.AnyKeyboard;
 import com.anysoftkeyboard.keyboards.Keyboard.Key;
@@ -45,6 +47,7 @@ class ProximityKeyDetector extends KeyDetector {
         final Key[] keys = getKeys();
         final int touchX = getTouchX(x);
         final int touchY = getTouchY(y);
+        Log.d("CS TS -> ProximityKD", touchX + ","+ touchY);
         int primaryIndex = AnyKeyboardViewBase.NOT_A_KEY;
         int closestKey = AnyKeyboardViewBase.NOT_A_KEY;
         int closestKeyDist = mProximityThresholdSquare + 1;

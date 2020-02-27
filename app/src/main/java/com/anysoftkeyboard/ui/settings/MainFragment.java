@@ -28,6 +28,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.anysoftkeyboard.PermissionsRequestCodes;
 import com.anysoftkeyboard.base.utils.Logger;
@@ -41,6 +42,7 @@ import com.anysoftkeyboard.ui.settings.setup.SetUpKeyboardWizardFragment;
 import com.anysoftkeyboard.ui.settings.setup.SetupSupport;
 import com.anysoftkeyboard.ui.tutorials.ChangeLogFragment;
 import com.menny.android.anysoftkeyboard.AnyApplication;
+import com.menny.android.anysoftkeyboard.BiAffect.bridge.BiAffectBridge;
 import com.menny.android.anysoftkeyboard.BuildConfig;
 import com.menny.android.anysoftkeyboard.R;
 
@@ -142,7 +144,9 @@ public class MainFragment extends Fragment {
         FragmentChauffeurActivity activity = (FragmentChauffeurActivity) getActivity();
         switch (item.getItemId()) {
             case R.id.about_menu_option:
-                activity.addFragmentToUi(new AboutAnySoftKeyboardFragment(), TransitionExperiences.DEEPER_EXPERIENCE_TRANSITION);
+                Toast.makeText( getContext(), "Initiating single upload", Toast.LENGTH_SHORT ).show();
+                BiAffectBridge.getInstance().singleUpload();
+//                activity.addFragmentToUi(new AboutAnySoftKeyboardFragment(), TransitionExperiences.DEEPER_EXPERIENCE_TRANSITION);
                 return true;
             case R.id.tweaks_menu_option:
                 activity.addFragmentToUi(new MainTweaksFragment(), TransitionExperiences.DEEPER_EXPERIENCE_TRANSITION);
@@ -210,7 +214,7 @@ public class MainFragment extends Fragment {
     public void onStart() {
         super.onStart();
         MainSettingsActivity.setActivityTitle(this, getString(R.string.how_to_pointer_title));
-
+        Logger.d(TAG, "MainFragment!!!!!!!!!!" );
         View notConfiguredBox = getView().findViewById(R.id.not_configured_click_here_root);
         //checking if the IME is configured
         final Context context = getActivity().getApplicationContext();

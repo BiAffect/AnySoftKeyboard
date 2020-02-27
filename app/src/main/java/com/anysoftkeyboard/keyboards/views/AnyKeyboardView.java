@@ -26,6 +26,7 @@ import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v4.view.MotionEventCompat;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.animation.Animation;
@@ -49,17 +50,22 @@ import com.anysoftkeyboard.prefs.AnimationsLevel;
 import com.anysoftkeyboard.rx.GenericOnError;
 import com.anysoftkeyboard.theme.KeyboardTheme;
 import com.menny.android.anysoftkeyboard.AnyApplication;
+import com.menny.android.anysoftkeyboard.BiAffect.BiAManager;
 import com.menny.android.anysoftkeyboard.R;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
-public class AnyKeyboardView extends AnyKeyboardViewWithExtraDraw implements InputViewBinder {
+public class AnyKeyboardView extends AnyKeyboardViewWithExtraDraw implements InputViewBinder{
 
     private static final int DELAY_BEFORE_POPPING_UP_EXTENSION_KBD = 35;// milliseconds
     private static final String TAG = "AnyKeyboardView";
     public static final int DEFAULT_EXTENSION_POINT = -5;
     private AnimationsLevel mAnimationLevel;
+
+    //BiAffect Specific Data Structures
+    HashMap<Integer, Long> idToDownTimeMap = new HashMap<>();
 
     private boolean mExtensionVisible = false;
     private int mExtensionKeyboardYActivationPoint;
@@ -193,13 +199,14 @@ public class AnyKeyboardView extends AnyKeyboardViewWithExtraDraw implements Inp
             //I mean, if there isn't any keyboard I'm handling, what's the point?
             return false;
         }
-
         if (areTouchesDisabled(me)) {
             mGestureTypingPathShouldBeDrawn = false;
             return super.onTouchEvent(me);
         }
 
         final int action = MotionEventCompat.getActionMasked(me);
+
+        biAffectTouchDataProbe(me);
 
         PointerTracker pointerTracker = getPointerTracker(me);
         mGestureTypingPathShouldBeDrawn = pointerTracker.isInGestureTyping();
@@ -278,6 +285,71 @@ public class AnyKeyboardView extends AnyKeyboardViewWithExtraDraw implements Inp
         } else {
             return super.onTouchEvent(me);
         }
+    }
+
+    public void biAffectTouchDataProbe(android.view.MotionEvent me){
+        final int action = MotionEventCompat.getActionMasked(me);
+        final int index = MotionEventCompat.getActionIndex(me);
+        long eventDownTime;
+        int pointerId;
+        switch (action) {
+            case MotionEvent.ACTION_DOWN:
+                pointerId = me.getPointerId(index);
+                idToDownTimeMap.put(pointerId,me.getEventTime());
+                eventDownTime = idToDownTimeMap.get(pointerId);
+                BiAManager.getInstance(AnyApplication.getAppContext()).addMasterEntry(eventDownTime, me.getEventTime(), action, me.getPressure(index),
+                        me.getX(index), me.getY(index), me.getTouchMajor(index), me.getTouchMinor(index), me.getPointerCount());
+                break;
+
+            case MotionEvent.ACTION_MOVE:
+                pointerId = me.getPointerId(index);
+                eventDownTime = idToDownTimeMap.get(pointerId);
+                BiAManager.getInstance(AnyApplication.getAppContext()).addMasterEntry(eventDownTime, me.getEventTime(), action, me.getPressure(index),
+                        me.getX(index), me.getY(index), me.getTouchMajor(index), me.getTouchMinor(index), me.getPointerCount());
+                break;
+
+
+            case MotionEvent.ACTION_POINTER_DOWN:
+                pointerId = me.getPointerId(index);
+                idToDownTimeMap.put(pointerId,me.getEventTime());
+                eventDownTime = idToDownTimeMap.get(pointerId);
+                BiAManager.getInstance(AnyApplication.getAppContext()).addMasterEntry(eventDownTime, me.getEventTime(), MotionEvent.ACTION_DOWN, me.getPressure(index),
+                        me.getX(index), me.getY(index), me.getTouchMajor(index), me.getTouchMinor(index), me.getPointerCount());
+                break;
+
+
+            case MotionEvent.ACTION_UP:
+                pointerId = me.getPointerId(index);
+                eventDownTime = idToDownTimeMap.get(pointerId);
+                BiAManager.getInstance(AnyApplication.getAppContext()).addMasterEntry(eventDownTime, me.getEventTime(), action, me.getPressure(index),
+                        me.getX(index), me.getY(index), me.getTouchMajor(index), me.getTouchMinor(index), me.getPointerCount());
+                break;
+
+
+            case MotionEvent.ACTION_POINTER_UP:
+                pointerId = me.getPointerId(index);
+                eventDownTime = idToDownTimeMap.get(pointerId);
+                BiAManager.getInstance(AnyApplication.getAppContext()).addMasterEntry(eventDownTime, me.getEventTime(), MotionEvent.ACTION_UP, me.getPressure(index),
+                        me.getX(index), me.getY(index), me.getTouchMajor(index), me.getTouchMinor(index), me.getPointerCount());
+                break;
+
+
+            case MotionEvent.ACTION_OUTSIDE:
+                pointerId = me.getPointerId(index);
+                eventDownTime = idToDownTimeMap.get(pointerId);
+                BiAManager.getInstance(AnyApplication.getAppContext()).addMasterEntry(eventDownTime, me.getEventTime(), action, me.getPressure(index),
+                        me.getX(index), me.getY(index), me.getTouchMajor(index), me.getTouchMinor(index), me.getPointerCount());
+                break;
+
+
+            case MotionEvent.ACTION_CANCEL:
+                pointerId = me.getPointerId(index);
+                eventDownTime = idToDownTimeMap.get(pointerId);
+                BiAManager.getInstance(AnyApplication.getAppContext()).addMasterEntry(eventDownTime, me.getEventTime(), action, me.getPressure(index), me.getX(index), me.getY(index), me.getTouchMajor(index), me.getTouchMinor(index), me.getPointerCount());
+                break;
+
+        }
+
     }
 
     @Override

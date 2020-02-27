@@ -47,6 +47,7 @@ import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -1777,6 +1778,9 @@ public class AnyKeyboardViewBase extends View implements
     private void sendOnXEvent(final int action, final long eventTime,
             final int x, final int y, PointerTracker tracker) {
         //CHECKSTYLE:OFF: missingswitchdefault
+        Long tsLong = System.currentTimeMillis()/1000;
+        Log.d("CS TS -> ", tsLong.toString());
+        Log.i("key detect", "Rchd here");
         switch (action) {
             case MotionEvent.ACTION_DOWN:
             case 0x00000005:// MotionEvent.ACTION_POINTER_DOWN:
@@ -1799,6 +1803,8 @@ public class AnyKeyboardViewBase extends View implements
             // Before processing a down event of modifier key, all pointers
             // already being tracked
             // should be released.
+            Long tsLong = System.currentTimeMillis()/1000;
+            Log.d("CS TS -> ", tsLong.toString());
             mPointerQueue.releaseAllPointersExcept(tracker, eventTime);
         }
         tracker.onDownEvent(x, y, eventTime);

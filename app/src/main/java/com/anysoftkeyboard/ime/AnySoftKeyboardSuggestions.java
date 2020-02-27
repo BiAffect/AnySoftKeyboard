@@ -10,6 +10,7 @@ import android.support.annotation.VisibleForTesting;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.util.Pair;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.KeyEvent;
 import android.view.View;
@@ -494,6 +495,7 @@ public abstract class AnySoftKeyboardSuggestions extends AnySoftKeyboardKeyboard
         if (BuildConfig.DEBUG) {
             Logger.d(TAG, "handleCharacter: %d, isPredictionOn: %s, mPredicting: %s", primaryCode, isPredictionOn(), TextEntryState.isPredicting());
         }
+        Log.i("KD","rchd here"+key.centerX+" "+key.centerY);
 
         mExpectingSelectionUpdateBy = SystemClock.uptimeMillis() + MAX_TIME_TO_EXPECT_SELECTION_UPDATE;
         if (TextEntryState.isReadyToPredict() && isAlphabet(primaryCode) && !isCursorTouchingWord()) {
@@ -741,6 +743,7 @@ public abstract class AnySoftKeyboardSuggestions extends AnySoftKeyboardKeyboard
         ic.endBatchEdit();
 
         setSuggestions(mSuggest.getNextSuggestions(mCommittedWord, false), false, false, false);
+        Logger.d("mCommittedWord", "text");
     }
 
     protected void setDictionariesForCurrentKeyboard() {
@@ -806,6 +809,7 @@ public abstract class AnySoftKeyboardSuggestions extends AnySoftKeyboardKeyboard
         mAdditionalCharacterForReverting = false;
         mJustAutoAddedWord = false;
         if (disabledUntilNextInputStart) {
+            Log.d("FROM ABORT", Log.getStackTraceString(new Exception()));
             Logger.d(TAG, "abortCorrection will abort correct forever");
             final KeyboardViewContainerView inputViewContainer = getInputViewContainer();
             if (inputViewContainer != null) {
@@ -975,11 +979,13 @@ public abstract class AnySoftKeyboardSuggestions extends AnySoftKeyboardKeyboard
     }
 
     public void pickSuggestionManually(int index, CharSequence suggestion) {
+        Logger.d("psm", "ASsuggestion981");
         pickSuggestionManually(index, suggestion, mAutoSpace);
     }
 
     @CallSuper
     public void pickSuggestionManually(int index, CharSequence suggestion, boolean withAutoSpaceEnabled) {
+        Logger.d("psm", "ASsuggestion988");
         final String typedWord = mWord.getTypedWord().toString();
 
         final InputConnection ic = getCurrentInputConnection();
@@ -996,13 +1002,14 @@ public abstract class AnySoftKeyboardSuggestions extends AnySoftKeyboardKeyboard
                     ic.commitCompletion(ci);
                 }
                 mCommittedWord = suggestion;
+                Logger.d("mCommittedWord", "suggestion");
                 if (mCandidateView != null) {
                     mCandidateView.clear();
                 }
                 return;
             }
             commitWordToInput(suggestion, false/*user physically picked a word from the suggestions strip. this is not a fix*/);
-
+            Logger.d("CommittedWordtoinput", "1012");
             TextEntryState.acceptedSuggestion(mWord.getTypedWord(), suggestion);
             // Follow it with a space
             if (withAutoSpaceEnabled && (index == 0 || !mWord.isAtTagsSearchState())) {
@@ -1063,6 +1070,7 @@ public abstract class AnySoftKeyboardSuggestions extends AnySoftKeyboardKeyboard
             }
         }
         mCommittedWord = wordToCommit;
+        Logger.d("mCommittedWord", "wordToCommit");
         mUndoCommitCursorPosition = UNDO_COMMIT_WAITING_TO_RECORD_POSITION;
 
         clearSuggestions();
